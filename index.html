@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>광명 건강생활 플랫폼 (MVP 프로토타입)</title>
+<meta name="description" content="우리 동네 의료와 건강, 돌봄을 하나로 연결하다. 광명시 병원·의원·치과·한의원·약국 통합 지도 검색.">
+<link rel="stylesheet" href="css/leaflet.css">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<a class="skip" href="#app">본문 바로가기</a>
+<header class="top">
+  <div class="top-in">
+    <a class="brand" href="#/" aria-label="광명 건강생활 플랫폼 홈">
+      <span class="logo" aria-hidden="true">＋</span>
+      <span><b>광명 건강생활</b><small>Gwangmyeong Health &amp; Care</small></span>
+    </a>
+    <nav id="nav" aria-label="주 메뉴">
+      <a href="#/" data-r="home">HOME</a>
+      <a href="#/find" data-r="find">의료기관 찾기</a>
+      <a href="#/pharmacy" data-r="pharmacy">약국 찾기</a>
+      <a href="#/emergency" data-r="emergency">응급의료</a>
+      <a href="#/health" data-r="health">건강생활</a>
+      <a href="#/welfare" data-r="welfare">복지·돌봄</a>
+      <a href="#/ai" data-r="ai">AI 의료정보 안내</a>
+      <a href="#/news" data-r="news">광명 건강정보</a>
+    </nav>
+    <div class="top-tools">
+      <button id="fontBtn" class="btn ghost" aria-pressed="false" title="글자 크게 보기">가 <small>크게</small></button>
+      <a class="btn ghost" href="#/admin">관리자</a>
+      <button id="menuBtn" class="btn ghost menu-btn" aria-label="메뉴 열기">☰</button>
+    </div>
+  </div>
+</header>
+
+<div class="sample-bar" id="sampleBar">
+  ⚠ 현재 표시된 기관 정보는 <b>구조 검증용 샘플 데이터</b>입니다(실제 병원·약국이 아님). 건강보험심사평가원·공공데이터포털 API 연동 후 실제 데이터로 교체됩니다.
+</div>
+
+<main id="app" tabindex="-1"></main>
+
+<aside id="drawer" class="drawer" aria-hidden="true" aria-label="기관 상세정보"></aside>
+<div id="modal" class="modal" aria-hidden="true"></div>
+
+<footer class="foot">
+  <div class="foot-in">
+    <div>
+      <b>광명 건강생활 플랫폼(가칭)</b>
+      <p>운영 제안: 소생커뮤니티협동조합 · 1차 대상: 경기도 광명시</p>
+    </div>
+    <div class="foot-note">
+      <p>• 본 서비스는 공개된 기관 정보를 안내하며 <b>진단·처방을 제공하지 않습니다.</b></p>
+      <p>• 운영시간은 등록된 정보 기준이며 실제 진료·영업 여부는 <b>전화로 확인</b>해 주세요.</p>
+      <p>• 응급상황은 즉시 <b>119</b>에 연락하세요.</p>
+    </div>
+  </div>
+</footer>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="data/data.js"></script>
+<script src="data/basemap.js"></script>
+<script src="js/kakao-config.js"></script>
+<script src="js/kakao-map.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>
