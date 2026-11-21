@@ -195,3 +195,5 @@ h2.sec{font-size:1.35rem;margin:30px 0 4px}
 .clist button:hover,.clist button:focus-visible{border-color:var(--pri);background:#f1f8f6}
 .clist small{display:block;color:var(--mut,#5b6b69);font-size:.8rem}
 .cdot{flex:none;width:28px;height:28px;border-radius:50%;display:grid;place-items:center;color:#fff;font-weight:800;font-size:.8rem}
+
+.chip.dim{opacity:.45;cursor:not-allowed}

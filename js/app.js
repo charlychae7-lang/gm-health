@@ -313,7 +313,7 @@ function mountMap(el, init, opts={}){
   }
   function drawDongs(){
     const cnt={}; filt({...S,dong:''}).forEach(f=>cnt[f.dong]=(cnt[f.dong]||0)+1);
-    $('#fDongs',el).innerHTML=`<button type="button" class="chip ${S.dong===''?'on':''}" data-d="">전체</button>`+dongNames.map(d=>`<button type="button" class="chip ${S.dong===d?'on':''}" data-d="${d}">${d}<i>${cnt[d]||0}</i></button>`).join('');
+    $('#fDongs',el).innerHTML=`<button type="button" class="chip ${S.dong===''?'on':''}" data-d="">전체</button>`+dongNames.map(d=>`<button type="button" class="chip ${S.dong===d?'on':''} ${cnt[d]?'':'dim'}" data-d="${d}" ${cnt[d]?'':'disabled title="이 동에는 등록된 기관이 없습니다"'}>${d}<i>${cnt[d]||0}</i></button>`).join('');
     $$('#fDongs .chip',el).forEach(b=>b.onclick=()=>{ S.dong=b.dataset.d; update(); if(S.dong){ const rs=F.filter(f=>f.dong===S.dong&&S.types.includes(f.facility_type)); if(rs.length>1) map.flyToBounds(L.latLngBounds(rs.map(f=>[f.latitude,f.longitude])).pad(.25),{maxZoom:17,duration:.8}); else map.flyTo(D.dongs[S.dong],16); } else map.flyToBounds(BOUNDS); });
   }
   function drawMarkers(){
