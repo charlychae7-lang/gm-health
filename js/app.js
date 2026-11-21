@@ -123,7 +123,7 @@ function render(){
   window.scrollTo(0,0);
   $('#sampleBar').style.display = D.meta.sample && route!=='admin' ? '' : (D.meta.sample?'':'none');
 }
-window.addEventListener('hashchange',()=>{ if(skipHash){skipHash=false;return;} const n=location.hash.replace(/^#\/?/,''); if(PAGES[n]&&n!==CUR.route){ CUR={route:n,params:{}}; render(); } });
+window.addEventListener('hashchange',()=>{ if(skipHash){skipHash=false;return;} const n=location.hash.replace(/^#\/?/,''); const r=n.split('?')[0]; if(PAGES[r]&&(n.includes('?')||r!==CUR.route)){ navigate('#/'+n); } });
 
 /* ---------- 상세 드로어 ---------- */
 let currentDetail=null;
