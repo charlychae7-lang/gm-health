@@ -159,7 +159,7 @@ function openDetail(id){
       ${m.medical_equipment&&m.medical_equipment.length?`<dt>주요 장비</dt><dd>${m.medical_equipment.map(esc).join(', ')}</dd>`:''}
       <dt>주차</dt><dd>${esc(m.parking_info||'확인 필요')}</dd>
       <dt>접근성</dt><dd>${(m.accessibility_info&&m.accessibility_info.length)?m.accessibility_info.map(esc).join(', '):'확인 필요'}</dd>
-      ${ph?`<dt>공휴일 운영</dt><dd>${yn(ph.holiday_operation)}</dd><dt>야간 운영</dt><dd>${yn(ph.night_operation)}</dd>${ph.dispensing_services?`<dt>조제 서비스</dt><dd>${ph.dispensing_services.map(esc).join(', ')}</dd>`:''}`:''}
+      ${ph?`<dt>공휴일 운영</dt><dd>${yn(ph.holiday_operation)}${ph.holiday_hours?' ('+esc(ph.holiday_hours)+')':''}</dd><dt>야간 운영</dt><dd>${yn(ph.night_operation)}${ph.public_night?' · <b>공공심야약국</b>(22시~익일 1시)':''}</dd>${ph.note?`<dt>약국 안내</dt><dd>${esc(ph.note)}</dd>`:''}${ph.dispensing_services?`<dt>조제 서비스</dt><dd>${ph.dispensing_services.map(esc).join(', ')}</dd>`:''}`:''}
       ${w?`<dt>서비스</dt><dd>${w.categories.map(esc).join(', ')}</dd><dt>이용대상</dt><dd>${esc(w.target_group)}</dd><dt>이용조건</dt><dd>${esc(w.eligibility)}</dd>${w.application_url?`<dt>신청</dt><dd><a href="${esc(w.application_url)}" target="_blank" rel="noopener">신청 안내 페이지</a></dd>`:''}`:''}
       ${m.note?`<dt>비고</dt><dd>${esc(m.note)}</dd>`:''}
     </dl>
@@ -484,7 +484,7 @@ const mapPage=(title,sub,defTypes)=>(app,p)=>{
 };
 PAGES.find=mapPage('의료기관 찾기','병원·의원·치과·한의원을 지도에서 검색하세요. 동을 누르면 세부지도로 이동합니다.',MEDICAL);
 PAGES.pharmacy=(app,p)=>{
-  app.innerHTML=head('약국 찾기','가까운 약국의 위치와 전화번호를 확인하세요.')+'<div class="wrap" style="padding-bottom:0"><div class="card" style="margin-bottom:10px"><b>🌙 야간·휴일에 문 여는 약국이 필요하세요?</b><p class="sub" style="margin:6px 0 0">당번 약국은 날마다 바뀌어 이 앱에는 담지 못했습니다. 공식 정보로 확인해 주세요. <a href="https://www.e-gen.or.kr/egen/search_pharmacy.do" target="_blank" rel="noopener">응급의료포털에서 약국 찾기 ↗</a> · 운영시간은 바뀔 수 있으니 방문 전 약국에 전화로 확인하세요. 119·123에서도 안내받을 수 있습니다</p></div></div><div id="mp"></div>';
+  app.innerHTML=head('약국 찾기','가까운 약국의 위치·운영시간과 야간·공휴일 운영 여부를 확인하세요.')+'<div class="wrap" style="padding-bottom:0"><div class="card" style="margin-bottom:10px"><b>🌙 야간·휴일에 문 여는 약국이 필요하세요?</b><p class="sub" style="margin:6px 0 0">상세 화면에서 공휴일·야간(공공심야약국) 운영 여부를 볼 수 있습니다. 운영시간은 신고된 기준이라 변동될 수 있고, 그날의 당번은 공식 정보로 확인해 주세요. <a href="https://www.e-gen.or.kr/egen/search_pharmacy.do" target="_blank" rel="noopener">응급의료포털에서 약국 찾기 ↗</a> · 운영시간은 바뀔 수 있으니 방문 전 약국에 전화로 확인하세요. 119·123에서도 안내받을 수 있습니다</p></div></div><div id="mp"></div>';
   const st=stateFromParams(p,['PHARMACY']); return mountMap($('#mp'),st,{defTypes:['PHARMACY']});
 };
 
