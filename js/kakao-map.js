@@ -86,12 +86,22 @@ function attach(c){
     kdiv.classList.toggle('z-xh',z>=17);
     if(zh) zh.textContent=fine?('세부지도 · 줌 '+z+' (건물 단위) · 카카오맵'):('동별 요약 · 동 원을 누르면 세부지도로 확대 (줌 '+z+') · 카카오맵');
     if(fine){
-      st.res.forEach(function(f){
-        var sel=f.facility_id===st.selId, n=document.createElement('div');
-        n.innerHTML=c.mkHtml(f,sel); n.style.cursor='pointer'; n.title=f.facility_name; n.tabIndex=0; n.setAttribute('role','button');
-        function go(){ c.onSelect(f.facility_id); }
-        n.addEventListener('click',go); n.addEventListener('keydown',function(e){ if(e.key==='Enter') go(); });
-        addOv(ll(f.latitude,f.longitude),n,sel?100:10,0.5,1);
+      var pr=kmap.getProjection();
+      var cl=c.clusterize(st.res,function(la,lo){ var p=pr.containerPointFromCoords(ll(la,lo)); return {x:p.x,y:p.y}; },z>=18?30:40,st.selId);
+      cl.forEach(function(g){
+        var n=document.createElement('div'); n.style.cursor='pointer';
+        if(g.items.length===1){
+          var f=g.items[0], sel=f.facility_id===st.selId;
+          n.innerHTML=c.mkHtml(f,sel); n.title=f.facility_name; n.tabIndex=0; n.setAttribute('role','button');
+          var go=function(){ c.onSelect(f.facility_id); };
+          n.addEventListener('click',go); n.addEventListener('keydown',function(e){ if(e.key==='Enter') go(); });
+          addOv(ll(f.latitude,f.longitude),n,sel?100:10,0.5,1);
+        } else {
+          n.innerHTML=c.clHtml(g); n.title=g.items.length+'곳 묶음'; n.tabIndex=0; n.setAttribute('role','button');
+          var tap=function(){ c.clusterTap(g,z,function(b,mz){ kFit(b.pad(.25),{maxZoom:mz}); },function(id){ c.onSelect(id); }); };
+          n.addEventListener('click',tap); n.addEventListener('keydown',function(e){ if(e.key==='Enter') tap(); });
+          addOv(ll(g.la,g.lo),n,8,0.5,0.5);
+        }
       });
     } else {
       var by={}; st.res.forEach(function(f){ (by[f.dong]=by[f.dong]||[]).push(f); });

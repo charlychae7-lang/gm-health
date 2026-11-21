@@ -188,6 +188,43 @@ function reportModal(f){
   $('#rpOk').onclick=()=>{ const l=LS.get('gm_reports',[]); l.push({log_id:'USR'+String(l.length+1).padStart(4,'0'),facility_id:f.facility_id,field_name:'',old_value:null,new_value:$('#rpN').value||null,issue_type:$('#rpT').value,reported_by:'시민 신고',reported_at:new Date().toLocaleString('sv').slice(0,16),resolved_at:null,resolution_status:'RECEIVED',resolution_note:null}); LS.set('gm_reports',l); close(); alert('신고가 접수되었습니다. 감사합니다.'); };
 }
 
+/* ---------- 핀 묶음: 화면에서 가까운 시설을 숫자 원 하나로 묶습니다 ---------- */
+function clusterize(list,proj,R,keepId){
+  const cl=[];
+  list.forEach(f=>{
+    const p=proj(f.latitude,f.longitude);
+    if(f.facility_id===keepId){ cl.push({items:[f],fixed:true,la:f.latitude,lo:f.longitude}); return; }
+    let hit=null;
+    for(const c of cl){ if(c.fixed) continue; if(Math.hypot(c.x-p.x,c.y-p.y)<R){ hit=c; break; } }
+    if(hit){ hit.items.push(f); hit.sx+=p.x; hit.sy+=p.y; hit.sla+=f.latitude; hit.slo+=f.longitude; const n=hit.items.length; hit.x=hit.sx/n; hit.y=hit.sy/n; hit.la=hit.sla/n; hit.lo=hit.slo/n; }
+    else cl.push({items:[f],x:p.x,y:p.y,sx:p.x,sy:p.y,sla:f.latitude,slo:f.longitude,la:f.latitude,lo:f.longitude});
+  });
+  return cl;
+}
+const clSize = n => n<10?40:n<30?46:52;
+function clHtml(c){
+  const n=c.items.length, ts=[...new Set(c.items.map(f=>f.facility_type))], col=ts.length===1?TYPE[ts[0]].c:'var(--pri)', sz=clSize(n);
+  return `<div class="clb" style="width:${sz}px;height:${sz}px;background:${col}" role="button" aria-label="${n}곳 묶음. 누르면 확대하거나 목록을 보여줍니다"><span>${n}</span></div>`;
+}
+function clusterList(items,pick){
+  const m=$('#modal'), its=items.slice().sort((a,b)=>a.facility_name.localeCompare(b.facility_name,'ko'));
+  m.innerHTML=`<div class="box" role="dialog" aria-label="같은 위치의 기관 목록"><h3>이 위치의 기관 ${its.length}곳</h3>
+   <p class="sub">한 건물이거나 아주 가까운 곳입니다. 눌러서 자세히 보세요.</p>
+   <ul class="clist">${its.map(f=>{const t=TYPE[f.facility_type]; return `<li><button type="button" data-id="${f.facility_id}"><span class="cdot" style="background:${t.c}">${t.k}</span><span><b>${esc(f.facility_name)}</b><small>${esc(t.l+(f._subj&&f._subj.length?' · '+f._subj.slice(0,2).join(', '):''))}</small></span></button></li>`}).join('')}</ul>
+   <div class="actions"><button class="btn ghost" id="clX" type="button">닫기</button></div></div>`;
+  m.classList.add('open'); m.setAttribute('aria-hidden','false');
+  const close=()=>{m.classList.remove('open');m.setAttribute('aria-hidden','true')};
+  $('#clX').onclick=close; m.onclick=e=>{if(e.target===m)close()};
+  $$('.clist button',m).forEach(b=>b.onclick=()=>{ close(); pick(b.dataset.id); });
+}
+/* 묶음을 눌렀을 때: 펼쳐질 수 있으면 확대, 같은 건물이거나 더 확대할 수 없으면 목록 */
+function clusterTap(c,z,fit,pick){
+  const la=c.items.map(f=>f.latitude), lo=c.items.map(f=>f.longitude);
+  const spread=Math.hypot((Math.max(...la)-Math.min(...la))*111320,(Math.max(...lo)-Math.min(...lo))*88300);
+  if(spread<8||z>=18) clusterList(c.items,pick);
+  else fit(L.latLngBounds(c.items.map(f=>[f.latitude,f.longitude])),19);
+}
+
 /* ---------- 지도 컴포넌트 (세부지도) ---------- */
 function mountMap(el, init, opts={}){
   const S = Object.assign({types:MEDICAL.slice(),dong:'',subject:'',q:'',openNow:false,weekend:false,night:false,wheel:false,parking:false,er:false,ref:null,radius:0}, init);
@@ -264,7 +301,7 @@ function mountMap(el, init, opts={}){
   let markers={}, res=[], selId=null, picking=false;
   const THRESH=15;
   /* 카카오맵(선택): 키가 있고 카카오 서버에 접속되면 켜집니다. 안 되면 내장 지도를 그대로 씁니다. */
-  const K = window.GM_KAKAO ? window.GM_KAKAO.attach({el,map,L,D,BOUNDS,THRESH,esc,toast,mkHtml,getState:()=>({res,selId,S}),onSelect:id=>select(id,false),onPick:(la,lo)=>onPick(la,lo)}) : {render(){},zoom:()=>map.getZoom()};
+  const K = window.GM_KAKAO ? window.GM_KAKAO.attach({el,map,L,D,BOUNDS,THRESH,esc,toast,mkHtml,clusterize,clHtml,clSize,clusterTap,getState:()=>({res,selId,S}),onSelect:id=>select(id,false),onPick:(la,lo)=>onPick(la,lo)}) : {render(){},zoom:()=>map.getZoom()};
 
   function mkHtml(f,sel){ const t=TYPE[f.facility_type]; const dim=!f.is_active||f.data_status==='ERROR';
     return `<div class="mkw"><div class="mk ${sel?'sel':''} ${dim?'dim':''}" style="background:${t.c}"><span>${t.k}</span></div><b class="mkn">${esc(f.facility_name)}</b></div>`; }
@@ -286,10 +323,21 @@ function mountMap(el, init, opts={}){
       const la=arr.reduce((a,f)=>a+f.latitude,0)/arr.length, lo=arr.reduce((a,f)=>a+f.longitude,0)/arr.length;
       L.marker([la,lo],{icon:L.divIcon({className:'',html:`<div class="dongb"><div><b>${d}</b><span>${arr.length}</span></div></div>`,iconSize:[58,58],iconAnchor:[29,29]}),keyboard:true,title:d+' '+arr.length+'곳'})
         .on('click',()=>map.flyToBounds(L.latLngBounds(arr.map(f=>[f.latitude,f.longitude])).pad(.3),{maxZoom:17,duration:.8})).addTo(bubbles); });
-    res.forEach(f=>{ const mk=L.marker([f.latitude,f.longitude],{icon:mkIcon(f,f.facility_id===selId),title:f.facility_name,riseOnHover:true})
-        .on('click',()=>select(f.facility_id,false)); mk.addTo(pins); markers[f.facility_id]=mk; });
+    drawPins();
     K.render();
     zoomSwap();
+  }
+  function drawPins(){
+    pins.clearLayers(); markers={};
+    const z=map.getZoom(); if(z<THRESH) return;
+    const cl=clusterize(res,(la,lo)=>map.project([la,lo],z),z>=18?30:40,selId);
+    cl.forEach(c=>{
+      if(c.items.length===1){ const f=c.items[0];
+        const mk=L.marker([f.latitude,f.longitude],{icon:mkIcon(f,f.facility_id===selId),title:f.facility_name,riseOnHover:true}).on('click',()=>select(f.facility_id,false)); mk.addTo(pins); markers[f.facility_id]=mk; }
+      else { const sz=clSize(c.items.length);
+        L.marker([c.la,c.lo],{icon:L.divIcon({className:'',html:clHtml(c),iconSize:[sz,sz],iconAnchor:[sz/2,sz/2]}),title:c.items.length+'곳 묶음',keyboard:true})
+          .on('click',()=>clusterTap(c,z,(b,mz)=>map.flyToBounds(b.pad(.25),{maxZoom:mz,duration:.6}),id=>select(id,true))).addTo(pins); }
+    });
   }
   function zoomSwap(){
     const z=map.getZoom(); const fine=z>=THRESH;
@@ -297,6 +345,7 @@ function mountMap(el, init, opts={}){
     $('#zh',el).textContent = fine? `세부지도 · 줌 ${z} (건물 단위)` : `동별 요약 · 동 원을 누르면 세부지도로 확대 (줌 ${z})`;
   }
   map.on('zoomend',zoomSwap);
+  map.on('zoomend',()=>{ if(map.getZoom()>=THRESH) drawPins(); });
 
   function drawList(){
     $('#cnt',el).innerHTML=`<b>${res.length}</b>곳${S.ref?' · 기준점에서 가까운 순':''}`;
@@ -336,7 +385,7 @@ function mountMap(el, init, opts={}){
   setTimeout(()=>{ map.invalidateSize();
     if(res.length&&(S.dong||S.q||S.subject||res.length<F.length&&S.types.length<7&&false)) map.fitBounds(L.latLngBounds(res.map(f=>[f.latitude,f.longitude])).pad(.3),{maxZoom:17});
     else map.fitBounds(BOUNDS); },120);
-  return { destroy(){ map.remove(); }, onSelect(f){ selId=f?f.facility_id:null; if(Object.keys(markers).length){ Object.entries(markers).forEach(([id,mk])=>mk.setIcon(mkIcon(F.find(x=>x.facility_id===id),id===selId))); drawList(); } K.render(); }, map, S, select, update };
+  return { destroy(){ map.remove(); }, onSelect(f){ selId=f?f.facility_id:null; drawPins(); drawList(); K.render(); }, map, S, select, update };
 }
 
 function stateFromParams(p, defTypes){
