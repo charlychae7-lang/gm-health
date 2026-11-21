@@ -57,7 +57,7 @@ applyLocal();
 /* ---------- 운영 여부 (등록된 운영시간 기준, 실시간 아님) ---------- */
 function openState(f, now=new Date()){
   if(!f.is_active) return {s:'closed',t:'폐업·휴업'};
-  if(!f.hours || f.data_status==='UNVERIFIED') return {s:'unknown',t:'운영정보 확인 필요'};
+  if(!f.hours || (f.data_status==='UNVERIFIED' && !f.hours_source)) return {s:'unknown',t:'운영정보 확인 필요'};
   const get=d=>f.hours.find(h=>h.day_of_week===d);
   const di=now.getDay(), cur=now.getHours()*60+now.getMinutes();
   const ph=get(DAYS[(di+6)%7]);
@@ -505,7 +505,7 @@ PAGES.admin=app=>{
     const body=$('#ab');
     if(tab==='dash'){
       const n=F.length, by=s=>F.filter(f=>f.data_status===s).length, geo=F.filter(f=>inCity(f.latitude,f.longitude)).length;
-      const hrs=F.filter(f=>f.hours&&f.data_status!=='UNVERIFIED').length, ph=F.filter(f=>f.phone).length, pct=(a,b)=>b?Math.round(a/b*100):0;
+      const hrs=F.filter(f=>f.hours&&(f.data_status!=='UNVERIFIED'||f.hours_source)).length, ph=F.filter(f=>f.phone).length, pct=(a,b)=>b?Math.round(a/b*100):0;
       const rp=reports(), open=rp.filter(r=>['RECEIVED','CHECKING'].includes(r.resolution_status)).length;
       const row=(l,a,b,t)=>`<div class="card"><div style="display:flex;justify-content:space-between"><b>${l}</b><span>${pct(a,b)}% <small style="color:var(--mut)">(목표 ${t}%)</small></span></div><div class="bar ${pct(a,b)>=t?'':'warn'}" style="margin-top:8px"><i style="width:${pct(a,b)}%"></i></div></div>`;
       body.innerHTML=`<div class="kpi"><div class="card"><b>${n}</b><span>등록 시설</span></div><div class="card"><b>${by('VERIFIED')}</b><span>검증 완료</span></div><div class="card"><b>${by('UNVERIFIED')+by('RECHECK')}</b><span>미검증·재확인</span></div><div class="card"><b>${open}</b><span>처리 대기 신고</span></div></div>
