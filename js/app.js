@@ -237,7 +237,7 @@ function mountMap(el, init, opts={}){
       <div><label class="l">동(세부지도로 이동)</label><div class="chips" id="fDongs"></div></div>
       <div><label class="l" for="fSub">진료과목</label><select id="fSub" class="inp"><option value="">전체 진료과목</option>${allSubjects().map(s=>`<option ${s===S.subject?'selected':''}>${esc(s)}</option>`).join('')}</select></div>
       <div><label class="l">조건</label><div class="tg" id="fTg">
-        ${[['openNow','현재 운영중(검증정보)'],['weekend','주말 운영'],['night','야간 운영'],['wheel','휠체어 접근'],['parking','주차 가능'],['er','응급실']].map(([k,l])=>`<label><input type="checkbox" data-k="${k}" ${S[k]?'checked':''}>${l}</label>`).join('')}</div></div>
+        ${[['openNow','현재 운영중(검증정보)'],['weekend','주말 운영'],['night','야간 운영'],['wheel','휠체어 접근(정보 있는 곳만)'],['parking','주차 가능'],['er','응급실']].map(([k,l])=>`<label><input type="checkbox" data-k="${k}" ${S[k]?'checked':''}>${l}</label>`).join('')}</div></div>
       <div><label class="l" for="fRad">내 위치/기준점 반경</label>
         <div style="display:flex;gap:6px"><select id="fRad" class="inp"><option value="0">반경 제한 없음</option><option value="500">500m</option><option value="1000">1km</option><option value="2000">2km</option><option value="3000">3km</option></select>
         <button class="btn sm" id="fLoc" type="button">📍 내 위치</button></div></div>
@@ -465,7 +465,7 @@ PAGES.home=app=>{
     <div class="home-map" id="hm"></div>
     <div class="grid2" style="margin-top:22px">
       <div class="card"><h3 style="margin-top:0">동별 의료자원 현황</h3>${byDong.map(([d,n])=>`<a href="#/find?dong=${d}&types=${Object.keys(TYPE).join(',')}" style="text-decoration:none;color:inherit"><div class="dbar"><span>${d}</span><div class="bar"><i style="width:${n/mx*100}%"></i></div><b>${n}</b></div></a>`).join('')}
-        <div class="note">샘플 데이터 기준 건수입니다. 실제 수치는 데이터 연동 후 공식 현황과 비교해 산정합니다.</div></div>
+        <div class="note">건강보험심사평가원 자료(2026.9.30 기준) 건수입니다.</div></div>
       <div class="card"><h3 style="margin-top:0">AI 의료정보 안내</h3><p class="sub">자연어로 물어보면 조건(동·진료과·주말·야간·휠체어 등)으로 바꿔 통합 데이터에서 찾아 드립니다.</p>
         <div class="chips">${ex.slice(0,4).map(e=>`<a class="chip" href="#/ai?q=${encodeURIComponent(e)}">${esc(e)}</a>`).join('')}</div>
         <div class="note">AI 안내는 검증된 공개정보 검색을 돕는 도구이며 <b>진단·처방을 대신하지 않습니다.</b></div></div>
@@ -511,11 +511,11 @@ PAGES.health=app=>{
 };
 PAGES.welfare=(app,p)=>{
   const cats=['전체','노인복지','돌봄','재가돌봄','방문진료','방문간호','요양','장애인 생활지원']; let cur=p.c||'전체';
-  app.innerHTML=head('복지·돌봄','복지관·방문진료·요양·재가돌봄 — 2차 확장 서비스(초기 샘플)')+`<div class="wrap"><div class="chips" id="wc"></div><div class="grid3" id="wg" style="margin-top:14px"></div>
+  app.innerHTML=head('복지·돌봄','복지관·방문진료·요양·재가돌봄 — 준비 중인 서비스')+`<div class="wrap"><div class="chips" id="wc"></div><div class="grid3" id="wg" style="margin-top:14px"></div>
    <h2 class="sec">서비스 분류</h2><div class="tblwrap"><table class="tbl"><tr><th>분류</th><th>서비스</th><th>대상</th></tr>${D.services.filter(s=>s.category_1!=='의료').map(s=>`<tr><td>${esc(s.category_1)} › ${esc(s.category_2)}</td><td>${esc(s.service_name)}</td><td>${esc(s.target_group)}</td></tr>`).join('')}</table></div>
    <div class="note">이용 자격·신청 방법은 시설·기관별로 다릅니다. 신청 전 해당 기관에 확인하세요.</div></div>`;
   const draw=()=>{ $('#wc').innerHTML=cats.map(c=>`<button class="chip ${c===cur?'on':''}" data-c="${c}">${c}</button>`).join(''); $$('#wc .chip').forEach(b=>b.onclick=()=>{cur=b.dataset.c;draw()});
-    const list=F.filter(f=>f.facility_type==='WELFARE'&&(cur==='전체'||f.welfare.categories.includes(cur))); $('#wg').innerHTML=list.map(facCard).join('')||'<p class="sub">해당 서비스 기관이 없습니다.</p>'; bindCards($('#wg')); };
+    const list=F.filter(f=>f.facility_type==='WELFARE'&&(cur==='전체'||f.welfare.categories.includes(cur))); $('#wg').innerHTML=list.map(facCard).join('')||'<div class="card"><b>복지·돌봄 시설은 준비 중입니다.</b><p class="sub" style="margin:6px 0 0">광명시 복지시설 자료를 확보하는 대로 추가합니다. 급한 상담은 가까운 동 행정복지센터나 보건소에 문의하세요.</p></div>'; bindCards($('#wg')); };
   draw();
 };
 PAGES.ai=(app,p)=>{
@@ -535,13 +535,13 @@ PAGES.ai=(app,p)=>{
   if(p.q) run(p.q);
 };
 const NEWS=[
- {tag:'샘플',t:'독감 예방접종 안내 (예시)',d:'공식 일정·대상은 광명시 보건소 공지를 확인하세요.'},
- {tag:'샘플',t:'보건소 건강증진 프로그램 (예시)',d:'금연·절주·만성질환 관리 프로그램 안내가 이곳에 게시됩니다.'},
- {tag:'샘플',t:'정보 오류 신고 접수 안내',d:'상세 화면의 "정보 오류 신고"로 접수하면 3영업일 이내 확인을 목표로 합니다.'},
- {tag:'샘플',t:'야간·휴일 진료 이용 팁',d:'운영시간은 변동될 수 있으니 방문 전 전화로 확인하세요.'},
- {tag:'샘플',t:'지역 통합돌봄 서비스 소개 (예시)',d:'방문진료·방문간호·재가돌봄 연계 정보가 단계적으로 추가됩니다.'},
- {tag:'샘플',t:'플랫폼 시범 운영 시민 테스트 모집',d:'30~50명 규모 시민 테스트 참여자를 모집할 예정입니다.'}];
-PAGES.news=app=>{ app.innerHTML=head('광명 건강정보','지역 건강소식 및 공공사업(예시 게시물)')+`<div class="wrap"><div class="grid3">${NEWS.map(n=>`<div class="card"><span class="badge b-sample">${n.tag}</span><h4 style="margin:8px 0 4px">${n.t}</h4><p class="sub" style="margin:0">${n.d}</p></div>`).join('')}</div></div>`; };
+ {tag:'안내',t:'자료 출처와 기준일',d:'병원·약국 정보는 건강보험심사평가원 「전국 병의원 및 약국 현황」(2026.9.30 기준)입니다. 이후 개·폐업이나 이전은 반영되지 않았을 수 있습니다.'},
+ {tag:'안내',t:'진료시간은 전화로 확인하세요',d:'진료시간이 등록된 기관은 일부입니다. 시간은 바뀔 수 있으니 방문 전 전화로 확인하세요.'},
+ {tag:'안내',t:'야간·휴일 진료 · 당번 약국',d:'응급의료포털(e-gen.or.kr)의 병의원·약국 찾기에서 확인하거나 119·123으로 안내받을 수 있습니다.'},
+ {tag:'안내',t:'정보가 다르면 알려 주세요',d:'상세 화면의 "정보 오류 신고"로 알려 주시면 확인해 고치겠습니다.'},
+ {tag:'준비 중',t:'복지·돌봄 시설',d:'광명시 복지시설 자료를 확보하는 대로 추가할 예정입니다.'},
+ {tag:'준비 중',t:'장애인 접근성 정보',d:'휠체어 출입 가능 여부 등은 자료가 없어 아직 표시하지 못합니다. 방문 전 전화로 확인해 주세요.'}];
+PAGES.news=app=>{ app.innerHTML=head('광명 건강정보','이용 안내와 준비 중인 기능')+`<div class="wrap"><div class="grid3">${NEWS.map(n=>`<div class="card"><span class="badge b-sample">${n.tag}</span><h4 style="margin:8px 0 4px">${n.t}</h4><p class="sub" style="margin:0">${n.d}</p></div>`).join('')}</div></div>`; };
 
 /* ---------- 관리자 ---------- */
 function csvCell(v){ if(v==null) return ''; if(Array.isArray(v)) v=v.join(';'); v=String(v); return /[",\n]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v; }
@@ -562,7 +562,7 @@ PAGES.admin=app=>{
       const row=(l,a,b,t)=>`<div class="card"><div style="display:flex;justify-content:space-between"><b>${l}</b><span>${pct(a,b)}% <small style="color:var(--mut)">(목표 ${t}%)</small></span></div><div class="bar ${pct(a,b)>=t?'':'warn'}" style="margin-top:8px"><i style="width:${pct(a,b)}%"></i></div></div>`;
       body.innerHTML=`<div class="kpi"><div class="card"><b>${n}</b><span>등록 시설</span></div><div class="card"><b>${by('VERIFIED')}</b><span>검증 완료</span></div><div class="card"><b>${by('UNVERIFIED')+by('RECHECK')}</b><span>미검증·재확인</span></div><div class="card"><b>${open}</b><span>처리 대기 신고</span></div></div>
       <h3>성과 지표(기획서 기준)</h3><div class="grid2">${row('주소·좌표 유효율(광명시 범위)',geo,n,95)}${row('운영시간 검증 등록률',hrs,n,80)}${row('전화번호 확보율',ph,n,95)}${row('검증 완료율',by('VERIFIED'),n,95)}</div>
-      <div class="note">※ "데이터 확보율"은 공식 현황(HIRA)과 비교해 산정해야 합니다. 현재 값은 샘플 데이터 기준 참고치입니다.</div>`;
+      <div class="note">※ "데이터 확보율"은 공식 현황(HIRA)과 비교해 산정해야 합니다. 현재 값은 건강보험심사평가원 자료(2026.9.30 기준)로 계산한 참고치입니다.</div>`;
     } else if(tab==='rep'){
       const rp=reports(); body.innerHTML=`<div class="tblwrap"><table class="tbl"><tr><th>ID</th><th>시설</th><th>유형</th><th>내용</th><th>접수</th><th>상태</th></tr>${rp.map(r=>{const f=F.find(x=>x.facility_id===r.facility_id);return `<tr><td>${r.log_id}</td><td>${f?`<a href="#/find?q=${encodeURIComponent(f.facility_name)}">${esc(f.facility_name)}</a>`:esc(r.facility_id)}</td><td>${ISSUE[r.issue_type]||r.issue_type}</td><td>${esc(r.new_value||r.resolution_note||'')}</td><td>${esc(r.reported_at||'')}</td><td><select class="inp rs" data-id="${r.log_id}" style="padding:.2rem">${Object.entries(RES).map(([k,v])=>`<option value="${k}" ${k===r.resolution_status?'selected':''}>${v}</option>`).join('')}</select></td></tr>`}).join('')}</table></div><div class="note">처리 목표: 접수 후 3영업일 이내. 변경 이력은 data_change_logs 구조와 동일한 필드로 저장됩니다(데모는 브라우저 저장).</div>`;
       $$('.rs',body).forEach(s=>s.onchange=()=>{const st=LS.get('gm_logst',{}); st[s.dataset.id]={resolution_status:s.value,resolved_at:['RESOLVED','REJECTED'].includes(s.value)?new Date().toLocaleString('sv').slice(0,16):null}; LS.set('gm_logst',st); view();});
