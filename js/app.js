@@ -402,7 +402,7 @@ function facCard(f){ const m=f.medical||{};
   return `<div class="card fac-card" data-id="${f.facility_id}" style="cursor:pointer"><div>${typeBadge(f)} ${osBadge(f)} ${stBadge(f)}</div><h4>${esc(f.facility_name)}</h4>
   <div style="font-size:.88rem;color:var(--mut)">${esc(f.address_road)}</div>
   <div style="font-size:.88rem">${f._subj.map(esc).join(' · ')}</div>
-  <div class="actions" style="margin-top:6px">${f.phone?`<a class="btn sm" href="tel:${esc(f.phone.replace(/[^0-9]/g,''))}" onclick="event.stopPropagation()">📞 ${esc(f.phone)}</a>`:''}<a class="btn ghost sm" href="#/find?q=${encodeURIComponent(f.facility_name)}" onclick="event.stopPropagation()">지도에서 보기</a></div></div>`; }
+  <div class="actions" style="margin-top:6px">${f.phone?`<a class="btn sm" href="tel:${esc(f.phone.replace(/[^0-9]/g,''))}" onclick="event.stopPropagation()">📞 ${esc(f.phone)}</a>`:''}<a class="btn ghost sm" href="#/${f.facility_type==='PHARMACY'?'pharmacy':'find'}?types=${f.facility_type}&q=${encodeURIComponent(f.facility_name)}" onclick="event.stopPropagation()">지도에서 보기</a></div></div>`; }
 function bindCards(root){ $$('.fac-card[data-id]',root).forEach(c=>c.onclick=()=>openDetail(c.dataset.id)); }
 
 /* ---------- AI(규칙 기반) 의료정보 안내 ---------- */
