@@ -543,6 +543,58 @@ const NEWS=[
  {tag:'준비 중',t:'장애인 접근성 정보',d:'휠체어 출입 가능 여부 등은 자료가 없어 아직 표시하지 못합니다. 방문 전 전화로 확인해 주세요.'}];
 PAGES.news=app=>{ app.innerHTML=head('광명 건강정보','이용 안내와 준비 중인 기능')+`<div class="wrap"><div class="grid3">${NEWS.map(n=>`<div class="card"><span class="badge b-sample">${n.tag}</span><h4 style="margin:8px 0 4px">${n.t}</h4><p class="sub" style="margin:0">${n.d}</p></div>`).join('')}</div></div>`; };
 
+/* ---------- 이용 안내(사용자 매뉴얼·이용 이야기·운영자 안내) ---------- */
+PAGES.guide=app=>{
+  const T=[['how','이용 방법'],['story','이용 이야기'],['ops','운영자 안내']];
+  const step=(n,t,d)=>`<div class="card"><span class="badge b-sample">${n}</span><h4 style="margin:8px 0 4px">${t}</h4><p class="sub" style="margin:0">${d}</p></div>`;
+  const story=(who,need,path,limit)=>`<div class="card"><h4 style="margin:0 0 4px">${who}</h4><p style="margin:0 0 6px"><b>상황</b> ${need}</p><p class="sub" style="margin:0 0 6px"><b>이렇게 이용해요</b> ${path}</p><p class="sub" style="margin:0"><b>알아둘 점</b> ${limit}</p></div>`;
+  const V={
+   how:()=>`<h2 class="sec" style="margin-top:0">처음 오셨다면</h2>
+    <div class="grid3">
+     ${step('1','가까운 병원·약국 찾기','위쪽 메뉴의 「의료기관 찾기」 또는 「약국 찾기」를 누르세요. 지도에 핀이 나오고, 아래(또는 옆) 목록에 가까운 순으로 보입니다.')}
+     ${step('2','동으로 좁히기','「동」 버튼을 누르면 그 동네 지도로 이동합니다. 흐리게 보이는 동은 아직 등록된 기관이 없는 곳입니다.')}
+     ${step('3','내 위치 기준으로 보기','「기준점 찍기」를 누른 뒤 지도를 누르거나, 위치 허용을 선택하면 그 자리에서 가까운 순으로 정렬됩니다.')}
+     ${step('4','조건으로 걸러내기','진료과, 주말·야간 진료, 주차, 휠체어, 지금 진료 중 같은 조건을 켜고 끌 수 있습니다. 「필터 초기화」로 처음 상태로 돌아갑니다.')}
+     ${step('5','자세히 보기','핀이나 목록을 누르면 주소·전화·진료시간·진료과목이 나옵니다. 전화 걸기와 길찾기 버튼이 함께 있습니다.')}
+     ${step('6','숫자로 묶인 핀','가까운 핀은 숫자 원으로 묶여 있습니다. 누르면 지도가 확대되고, 같은 건물이면 목록이 열립니다.')}
+    </div>
+    <h2 class="sec">메뉴별 안내</h2>
+    <div class="tblwrap"><table class="tbl"><tr><th>메뉴</th><th>할 수 있는 일</th></tr>
+     <tr><td>의료기관 찾기</td><td>병원·의원·치과·한의원을 지도와 목록에서 찾고 조건으로 걸러냅니다.</td></tr>
+     <tr><td>약국 찾기</td><td>약국 위치와 요일별 운영시간, 공휴일·야간(공공심야약국) 운영 여부를 봅니다. 오늘의 당번 약국은 응급의료포털 링크로 안내합니다.</td></tr>
+     <tr><td>응급의료</td><td>119 안내, 응급실 보유 기관, 야간 약국, 주말·휴일 진료 기관을 모아 봅니다.</td></tr>
+     <tr><td>건강생활</td><td>건강검진·예방접종·보건소 서비스 공식 안내로 연결합니다.</td></tr>
+     <tr><td>복지·돌봄</td><td>준비 중입니다. 자료를 확보하는 대로 시설이 추가됩니다.</td></tr>
+     <tr><td>AI 의료정보 안내</td><td>"하안동에서 가까운 약국"처럼 말하듯 물으면 조건으로 바꿔 찾아 줍니다. 진단·처방은 하지 않습니다.</td></tr>
+     <tr><td>글자 크게</td><td>오른쪽 위 「가 크게」 버튼으로 글자를 키웁니다.</td></tr></table></div>
+    <div class="note"><b>꼭 알아두세요</b> ① 진료시간은 바뀔 수 있으니 방문 전 전화로 확인하세요. ② 시간 칸이 비어 있으면 아직 확인되지 않은 곳입니다. ③ 생명이 위급하면 검색하지 말고 바로 119에 연락하세요. ④ 정보가 다르면 상세 화면의 「정보 오류 신고」로 알려 주세요.</div>`,
+   story:()=>`<p class="sub">실제 이용 장면을 가정해 정리한 이야기입니다. 서비스를 고치거나 설명할 때 기준으로 삼습니다.</p>
+    <div class="grid2">
+     ${story('① 퇴근길 직장인','저녁 8시, 아이가 열이 나서 문 연 약국이 급하다.','「약국 찾기」에서 기준점을 현재 위치로 하고 야간 운영 조건을 켭니다. 가까운 순으로 보고 전화 후 방문합니다.','오늘 당번 약국은 응급의료포털에서 한 번 더 확인합니다. 증상이 심하면 119.')}
+     ${story('② 어르신과 자녀','어머니가 무릎이 아파 집 근처 정형외과를 찾는다. 글자가 작으면 읽기 힘들다.','「가 크게」를 누르고, 동을 고른 뒤 진료과를 정형외과로 합니다. 전화 버튼으로 바로 연결합니다.','진료시간이 없는 곳은 전화로 확인해야 합니다.')}
+     ${story('③ 주말 진료가 필요한 학부모','토요일 오전에 소아과를 가야 한다.','「AI 의료정보 안내」에 "철산동에서 주말에 진료하는 소아과"처럼 묻거나 필터에서 주말 진료를 켭니다.','토요일 진료시간은 기관이 등록한 값입니다. 변경될 수 있습니다.')}
+     ${story('④ 휠체어를 쓰는 이용자','계단 없이 갈 수 있는 병원이 필요하다.','필터의 휠체어 항목을 사용하되, 방문 전에 전화로 출입 여부를 꼭 확인합니다.','접근성 자료가 아직 부족해 모든 기관이 표시되지는 않습니다. 보강 예정입니다.')}
+     ${story('⑤ 새로 이사 온 주민','동네 병원·약국·보건소를 한 번에 파악하고 싶다.','「의료기관 찾기」에서 우리 동을 눌러 세부지도로 둘러보고, 「건강생활」에서 보건소와 검진 안내를 봅니다.','동 경계 근처 기관은 다른 동으로 표시될 수 있습니다.')}
+     ${story('⑥ 돌봄을 찾는 보호자','부모님을 위한 방문진료·재가돌봄 서비스를 알고 싶다.','「복지·돌봄」에서 분류를 확인하고, 급한 상담은 동 행정복지센터나 보건소에 문의합니다.','복지·돌봄 시설 목록은 준비 중입니다.')}
+    </div>
+    <h2 class="sec">앞으로 더하고 싶은 이야기</h2>
+    <ul><li>복지·돌봄 시설을 지도에서 찾고 신청 방법까지 이어 보기</li><li>날짜별 당번 약국을 이 화면에서 바로 보기</li><li>기관별 접근성(경사로·승강기·장애인 화장실) 표시</li></ul>`,
+   ops:()=>`<p class="sub">운영 담당자를 위한 안내입니다. 일반 이용자는 보지 않으셔도 됩니다.</p>
+    <h2 class="sec" style="margin-top:0">데이터 갱신 순서</h2>
+    <ol><li>건강보험심사평가원 「전국 병의원 및 약국 현황」 새 기준일 자료 확인(분기 단위)</li><li>국립중앙의료원 병·의원·약국 API로 진료·운영시간 다시 받기(월 1회 권장)</li><li>데이터 파일(data/data.js)에 반영하고 기준일·조회일 문구 고치기</li><li>GitHub에 올리고 화면에서 새 시간이 보이는지 확인</li></ol>
+    <h2 class="sec">지켜야 할 원칙</h2>
+    <ul><li>공공데이터 인증키는 사이트 파일에 넣지 않습니다.</li><li>카카오 지도 검색 결과는 저장·캐시하지 않습니다. 지도 키는 허용 도메인을 제한해 사용합니다.</li><li>이용자의 개인정보나 건강 정보를 수집하지 않습니다.</li><li>출처(건강보험심사평가원, 국립중앙의료원, 카카오맵)와 기준일을 항상 표시합니다.</li><li>광명시청 복지시설 파일은 이용조건(상업적 이용·변경 금지)이 맞지 않아 쓰지 않고, 시청에 자료 제공을 별도로 요청합니다.</li></ul>
+    <h2 class="sec">아직 비어 있는 것</h2>
+    <ul><li>복지·돌봄 시설, 장애인 접근성, 날짜별 당번 약국</li><li>진료시간이 없는 병·의원 15곳, 약국 2곳</li></ul>
+    <p><a class="btn ghost sm" href="#/admin">관리자 화면으로 가기</a></p>`
+  };
+  let cur='how';
+  app.innerHTML=head('이용 안내','처음 오신 분을 위한 사용 방법과 이용 이야기')+`<div class="wrap"><div class="tabs">${T.map(([k,l])=>`<button data-t="${k}">${l}</button>`).join('')}</div><div id="gb"></div></div>`;
+  const draw=()=>{ $$('.tabs button',app).forEach(b=>b.classList.toggle('on',b.dataset.t===cur)); $('#gb').innerHTML=V[cur](); };
+  $$('.tabs button',app).forEach(b=>b.onclick=()=>{cur=b.dataset.t;draw();window.scrollTo(0,0)});
+  draw();
+};
+
 /* ---------- 관리자 ---------- */
 function csvCell(v){ if(v==null) return ''; if(Array.isArray(v)) v=v.join(';'); v=String(v); return /[",\n]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v; }
 const CSV_COLS=['facility_id','source_org_code','facility_name','facility_type','legal_type','address_road','address_jibun','postal_code','sido','sigungu','dong','latitude','longitude','phone','homepage_url','is_active','source_id','source_updated_at','collected_at','verified_at','data_status'];
