@@ -185,7 +185,7 @@ function reportModal(f){
   m.classList.add('open'); m.setAttribute('aria-hidden','false');
   const close=()=>{m.classList.remove('open');m.setAttribute('aria-hidden','true')};
   $('#rpNo').onclick=close; m.onclick=e=>{if(e.target===m)close()};
-  $('#rpOk').onclick=()=>{ const l=LS.get('gm_reports',[]); l.push({log_id:'USR'+String(l.length+1).padStart(4,'0'),facility_id:f.facility_id,field_name:'',old_value:null,new_value:$('#rpN').value||null,issue_type:$('#rpT').value,reported_by:'시민 신고',reported_at:new Date().toLocaleString('sv').slice(0,16),resolved_at:null,resolution_status:'RECEIVED',resolution_note:null}); LS.set('gm_reports',l); close(); alert('신고가 접수되었습니다. 감사합니다.'); };
+  $('#rpOk').onclick=()=>{ const l=LS.get('gm_reports',[]); l.push({log_id:'USR'+String(l.length+1).padStart(4,'0'),facility_id:f.facility_id,field_name:'',old_value:null,new_value:$('#rpN').value||null,issue_type:$('#rpT').value,reported_by:'시민 신고',reported_at:new Date().toLocaleString('sv').slice(0,16),resolved_at:null,resolution_status:'RECEIVED',resolution_note:null}); LS.set('gm_reports',l); sendReport(l[l.length-1],f); close(); alert('신고가 접수되었습니다. 감사합니다.'); };
 }
 
 /* ---------- 핀 묶음: 화면에서 가까운 시설을 숫자 원 하나로 묶습니다 ---------- */
@@ -534,7 +534,7 @@ PAGES.ai=(app,p)=>{
   $$('.chips .chip',app).forEach(b=>b.onclick=()=>{$('#aq').value=b.textContent;setQuery({q:b.textContent});run(b.textContent)});
   if(p.q) run(p.q);
 };
-const NEWS=[
+let NEWS=[
  {tag:'안내',t:'자료 출처와 기준일',d:'병원·약국 정보는 건강보험심사평가원 「전국 병의원 및 약국 현황」(2026.9.30 기준)입니다. 이후 개·폐업이나 이전은 반영되지 않았을 수 있습니다.'},
  {tag:'안내',t:'진료시간은 전화로 확인하세요',d:'진료시간이 등록된 기관은 일부입니다. 시간은 바뀔 수 있으니 방문 전 전화로 확인하세요.'},
  {tag:'안내',t:'야간·휴일 진료 · 당번 약국',d:'응급의료포털(e-gen.or.kr)의 병의원·약국 찾기에서 확인하거나 119·123으로 안내받을 수 있습니다.'},
@@ -584,6 +584,8 @@ PAGES.guide=app=>{
     <ol><li>건강보험심사평가원 「전국 병의원 및 약국 현황」 새 기준일 자료 확인(분기 단위)</li><li>국립중앙의료원 병·의원·약국 API로 진료·운영시간 다시 받기(월 1회 권장)</li><li>데이터 파일(data/data.js)에 반영하고 기준일·조회일 문구 고치기</li><li>GitHub에 올리고 화면에서 새 시간이 보이는지 확인</li></ol>
     <h2 class="sec">지켜야 할 원칙</h2>
     <ul><li>공공데이터 인증키는 사이트 파일에 넣지 않습니다.</li><li>카카오 지도 검색 결과는 저장·캐시하지 않습니다. 지도 키는 허용 도메인을 제한해 사용합니다.</li><li>이용자의 개인정보나 건강 정보를 수집하지 않습니다.</li><li>출처(건강보험심사평가원, 국립중앙의료원, 카카오맵)와 기준일을 항상 표시합니다.</li><li>광명시청 복지시설 파일은 이용조건(상업적 이용·변경 금지)이 맞지 않아 쓰지 않고, 시청에 자료 제공을 별도로 요청합니다.</li></ul>
+    <h2 class="sec">구글 시트로 관리하기</h2>
+    <p class="sub">복지시설 목록·정보 수정·공지를 구글 시트에 적으면 사이트에 반영되고, 시민 오류 신고가 시트에 쌓입니다. 설정은 js/sheets-config.js에 시트 주소를 넣으면 시작됩니다(비어 있으면 연동 없이 작동).</p>
     <h2 class="sec">아직 비어 있는 것</h2>
     <ul><li>복지·돌봄 시설, 장애인 접근성, 날짜별 당번 약국</li><li>진료시간이 없는 병·의원 15곳, 약국 2곳</li></ul>
     <p><a class="btn ghost sm" href="#/admin">관리자 화면으로 가기</a></p>`
@@ -649,6 +651,41 @@ PAGES.admin=app=>{
   view();
 };
 
+/* ---------- 구글 시트 연동 (선택: js/sheets-config.js 에 주소를 넣으면 작동) ---------- */
+const SHC=window.GM_SHEETS||{};
+function parseSheetCSV(t){ const rows=[]; let r=[],c='',q=false; t=t.replace(/^﻿/,'');
+  for(let i=0;i<t.length;i++){ const ch=t[i];
+    if(q){ if(ch==='"'){ if(t[i+1]==='"'){c+='"';i++;} else q=false; } else c+=ch; }
+    else if(ch==='"') q=true; else if(ch===','){ r.push(c); c=''; }
+    else if(ch==='\n'||ch==='\r'){ if(ch==='\r'&&t[i+1]==='\n') i++; r.push(c); c=''; if(r.some(x=>x.trim()!=='')) rows.push(r); r=[]; }
+    else c+=ch; }
+  if(c!==''||r.length){ r.push(c); if(r.some(x=>x.trim()!=='')) rows.push(r); }
+  if(!rows.length) return []; const h=rows[0].map(x=>x.trim());
+  return rows.slice(1).map(v=>{ const o={}; h.forEach((k,i)=>o[k]=(v[i]||'').trim()); return o; }); }
+const fetchSheet=async u=>{ const r=await fetch(u,{cache:'no-store'}); if(!r.ok) throw new Error(r.status); return parseSheetCSV(await r.text()); };
+const yes=v=>!/^(n|no|아니|아니오|x|0|false|사용안함|폐업|휴업)$/i.test(String(v||'Y').trim());
+function sendReport(rec,f){ if(!SHC.reportUrl) return;
+  try{ fetch(SHC.reportUrl,{method:'POST',mode:'no-cors',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify({접수번호:rec.log_id,시설ID:f.facility_id,시설명:f.facility_name,유형:rec.issue_type,내용:rec.new_value||'',접수시각:rec.reported_at})}); }catch(e){} }
+const SHEET_FIX={'전화':f=>v=>{f.phone=v},'홈페이지':f=>v=>{f.homepage_url=v},'사용여부':f=>v=>{f.is_active=yes(v)},
+  '주차':f=>v=>{(f.medical=f.medical||{}).parking_info=v},'접근성':f=>v=>{(f.medical=f.medical||{}).accessibility_info=v.split(/[,，]/).map(x=>x.trim()).filter(Boolean)},
+  '예약링크':f=>v=>{(f.medical=f.medical||{}).reservation_url=v},'안내':f=>v=>{ if(f.pharmacy) f.pharmacy.note=v; else (f.medical=f.medical||{}).note=v; }};
+async function loadSheets(){
+  if(!SHC.welfare&&!SHC.fix&&!SHC.news) return; let changed=false;
+  try{ if(SHC.welfare){ const rows=await fetchSheet(SHC.welfare); rows.forEach((r,i)=>{
+      const la=parseFloat(r['위도']),lo=parseFloat(r['경도']); if(!r['시설명']||!isFinite(la)||!isFinite(lo)||!inCity(la,lo)) return;
+      let dong=r['동']; if(!dong){ let b=1e9; F.forEach(x=>{ const d=(x.latitude-la)**2+(x.longitude-lo)**2; if(d<b){b=d;dong=x.dong;} }); }
+      const id='SHW'+String(i+1).padStart(4,'0'); const i0=F.findIndex(x=>x.facility_id===id); if(i0>=0) F.splice(i0,1);
+      if(!yes(r['사용여부'])) return;
+      F.push({facility_id:id,facility_name:r['시설명'],facility_type:'WELFARE',legal_type:r['분류']||'복지·돌봄',address_road:r['주소']||'',address_jibun:null,sido:'경기도',sigungu:'광명시',dong,latitude:la,longitude:lo,phone:r['전화']||null,homepage_url:r['홈페이지']||null,is_active:true,source_id:'SRC_SHEET',source_updated_at:new Date().toISOString().slice(0,10),verified_at:null,data_status:/검증/.test(r['검증']||'')&&!/미검증/.test(r['검증']||'')?'VERIFIED':'UNVERIFIED',is_sample:false,hours:null,
+        welfare:{categories:(r['서비스분류']||r['분류']||'').split(/[,，]/).map(x=>x.trim()).filter(Boolean),target_group:r['이용대상']||'확인 필요',eligibility:[r['이용조건'],r['운영시간']&&('운영: '+r['운영시간'])].filter(Boolean).join(' · ')||'기관에 문의',application_url:r['신청링크']||null}}); changed=true; }); }
+  }catch(e){ console.warn('복지시설 시트를 불러오지 못했습니다',e); }
+  try{ if(SHC.fix){ const rows=await fetchSheet(SHC.fix); rows.forEach(r=>{ const f=F.find(x=>x.facility_id===r['시설ID']); const fn=SHEET_FIX[r['항목']]; if(f&&fn&&r['새값']!==''){ fn(f)(r['새값']); changed=true; } }); }
+  }catch(e){ console.warn('정보수정 시트를 불러오지 못했습니다',e); }
+  try{ if(SHC.news){ const rows=await fetchSheet(SHC.news).then(a=>a.filter(r=>r['제목']&&yes(r['표시']))); if(rows.length){ NEWS=rows.map(r=>({tag:r['구분']||'안내',t:r['제목'],d:r['내용']||''})); changed=true; } }
+  }catch(e){ console.warn('공지 시트를 불러오지 못했습니다',e); }
+  if(changed){ F.forEach(derive); render(); }
+}
+
 /* ---------- 초기화 ---------- */
 $('#fontBtn').onclick=e=>{ const on=document.documentElement.classList.toggle('big'); e.currentTarget.setAttribute('aria-pressed',on); LS.set('gm_big',on); };
 if(LS.get('gm_big',false)){ document.documentElement.classList.add('big'); $('#fontBtn').setAttribute('aria-pressed','true'); }
@@ -656,4 +693,5 @@ $('#menuBtn').onclick=()=>$('#nav').classList.toggle('open');
 document.addEventListener('keydown',e=>{ if(e.key==='Escape'){ closeDetail(); $('#modal').classList.remove('open'); } });
 { const n=(location.hash||'').replace(/^#\/?/,''); if(PAGES[n]) CUR={route:n,params:{}}; }
 render();
+loadSheets();
 })();
